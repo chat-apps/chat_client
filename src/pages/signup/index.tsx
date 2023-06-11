@@ -9,11 +9,11 @@ import Container from '@mui/material/Container';
 import { Link, useNavigate } from 'react-router-dom';
 import { signUpApi } from '../../helpers/login.helper';
 import { setItemToLocalStorage } from '../../utils';
-import { AppContext } from '../../App';
+import UserContext from '../../context/user.context';
 
 const SignUpPage = () => {
+  const { handleSetToken, handleSetUser } = useContext(UserContext)
   const navigate = useNavigate()
-  const { setAuthToken } = useContext(AppContext)
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -29,18 +29,19 @@ const SignUpPage = () => {
   const handleSignUp = async (body: any) => {
     await signUpApi(body).then((res: any) => {
       if (res?.data?.success) {
-        handleIfSuccess(res.data.data, res.data.token);
+        handleIfSuccess(res?.data?.data, res?.data?.token);
       } else {
         alert(res);
       }
     }).catch((error) => {
-      alert(error.response.data.error);
+      alert(error?.response?.data?.error);
      })
   }
 
   const handleIfSuccess = (user: any, token: string) => {
     setItemToLocalStorage('user', JSON.stringify({ user, token }))
-    setAuthToken(token);
+    handleSetToken(token);
+    handleSetUser({ ID: user.ID, name: user.name })
     navigate('/')
   }
 

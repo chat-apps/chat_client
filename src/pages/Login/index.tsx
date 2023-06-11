@@ -9,12 +9,14 @@ import Container from '@mui/material/Container';
 import { Link, useNavigate } from 'react-router-dom';
 import { loginApi } from '../../helpers/login.helper';
 import { setItemToLocalStorage } from '../../utils';
-import { AppContext } from '../../App';
+import UserContext from '../../context/user.context';
 
 
 const LoginPage = () => {
-  const { setAuthToken } = useContext(AppContext)
+  const { handleSetToken, handleSetUser } = useContext(UserContext)
   const navigate = useNavigate()
+  // const { socket, activeUsers, join } = useSocket(SOCKET_URL)
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -40,7 +42,8 @@ const LoginPage = () => {
   
   const handleIfSuccess = (user: any, token: string) => {
     setItemToLocalStorage('user', JSON.stringify({ user, token }))
-    setAuthToken(token);
+    handleSetToken(token);
+    handleSetUser({ ID: user.ID, name: user.name})
     navigate('/')
   }
 
