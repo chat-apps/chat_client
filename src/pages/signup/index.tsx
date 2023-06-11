@@ -9,10 +9,11 @@ import Container from '@mui/material/Container';
 import { Link, useNavigate } from 'react-router-dom';
 import { signUpApi } from '../../helpers/login.helper';
 import { setItemToLocalStorage } from '../../utils';
-import UserContext from '../../context/user.context';
+import { useUserContext } from '../../context/user.context';
+import { toast } from 'react-toastify';
 
 const SignUpPage = () => {
-  const { handleSetToken, handleSetUser } = useContext(UserContext)
+  const { handleSetUser, handleSetToken } = useUserContext();
   const navigate = useNavigate()
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -30,11 +31,18 @@ const SignUpPage = () => {
     await signUpApi(body).then((res: any) => {
       if (res?.data?.success) {
         handleIfSuccess(res?.data?.data, res?.data?.token);
+        toast('Successfully Signup by new account', {
+          type: 'success',
+        });
       } else {
-        alert(res);
+        toast(JSON.stringify(res), {
+          type: 'error',
+        });
       }
     }).catch((error) => {
-      alert(error?.response?.data?.error);
+      toast(error?.response?.data?.error, {
+        type: 'error'
+      });
      })
   }
 

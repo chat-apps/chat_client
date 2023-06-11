@@ -1,4 +1,4 @@
-import React, { FormEvent, useContext } from 'react';
+import React, { FormEvent, useContext, useState } from 'react';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
 import TextField from '@mui/material/TextField';
@@ -9,12 +9,14 @@ import Container from '@mui/material/Container';
 import { Link, useNavigate } from 'react-router-dom';
 import { loginApi } from '../../helpers/login.helper';
 import { setItemToLocalStorage } from '../../utils';
-import UserContext from '../../context/user.context';
+import UserContext, { useUserContext } from '../../context/user.context';
+import { toast } from 'react-toastify';
 
 
 const LoginPage = () => {
-  const { handleSetToken, handleSetUser } = useContext(UserContext)
+  const { handleSetUser, handleSetToken } = useUserContext();
   const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
   // const { socket, activeUsers, join } = useSocket(SOCKET_URL)
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -29,14 +31,24 @@ const LoginPage = () => {
   };
 
   const handleLogin = async (body: any) => {
+    setLoading(true)
     await loginApi(body).then((res: any) => {
       if (res.data.success) {
         handleIfSuccess(res?.data?.data, res?.data?.token);
+        toast('logged-in to your account', {
+          type: 'success',
+        });
       } else {
-        console.error(JSON.stringify(res));
+        toast(JSON.stringify(res), {
+          type: 'error',
+        });
       }
     }).catch((error) => {
-      alert(error?.response?.data?.error);
+      toast(error?.response?.data?.error, {
+        type: 'error',
+      });
+    }).finally(() => {
+      setLoading(false)
     })
   }
   
@@ -86,7 +98,8 @@ const LoginPage = () => {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2, py: 2 }}
+            sx={{ mt: 3, mb: 2, py: 2 }}
+            disabled={loading}
             >
               Sign In
             </Button>

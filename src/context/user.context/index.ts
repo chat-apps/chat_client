@@ -1,14 +1,14 @@
-import { createContext } from "react";
+import { createContext, useContext } from "react";
 import { UserContextInterface } from "../types";
 
-const UserContext = createContext<UserContextInterface>({
-  state: {
-    userID: null,
-    username: null,
-    token: null
-  },
-  handleSetToken: (args: string) => { },
-  handleSetUser: (args: any) => { }
-})
+const UserContext = createContext<UserContextInterface | undefined>(undefined);
 
-export default UserContext
+export const useUserContext = () => {
+  const context = useContext(UserContext);
+  if (!context) {
+    throw new Error("useUserContext must be used within a UserContextProvider");
+  }
+  return context;
+};
+
+export default UserContext;

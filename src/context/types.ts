@@ -6,14 +6,14 @@ export interface SocketContextInterface {
 export interface SocketStateInterface {
   activeUsers: number[] | []
 }
-export interface UserContextInterface {
-  state: UserStateInterface;
-  handleSetToken: (args: string) => void;
-  handleSetUser: (args: any) => void;
-}
-
 export interface UserStateInterface {
+  userID: number;
   username: string | null;
   token: string | null;
-  userID: number | null;
+}
+
+export interface UserContextInterface {
+  state: UserStateInterface;
+  handleSetUser: (items: any) => void;
+  handleSetToken: (item: string) => void;
 }

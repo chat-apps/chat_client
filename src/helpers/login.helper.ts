@@ -3,28 +3,35 @@ import { BASE_URL } from "../common"
 import { LoginUserInterface, SignUpUserInterface } from "./types"
 
 const signUpApi = async (body: SignUpUserInterface) => {
-  try {
-    return axios.post(
-      `${BASE_URL}/user/register`, body, {
-      headers: { 'Content-Type': 'application/json' }
-    }
-    )
-  } catch (error) {
-    console.error(error)
+  return axios.post(
+    `${BASE_URL}/user/register`, body, {
+    headers: { 'Content-Type': 'application/json' }
   }
+  )
 }
 
 const loginApi = async (body: LoginUserInterface) => {
-  try {
-    return axios.post(
-      `${BASE_URL}/user/login`, body, {
-      headers: { 'Content-Type': 'application/json' }
-    }
-    )
-  } catch (error) {
-    console.error(error)
+  return axios.post(
+    `${BASE_URL}/user/login`, body, {
+    headers: { 'Content-Type': 'application/json' }
   }
+  )
+}
+
+const getAllUsers = async (token: string) => {
+  return axios.get(
+    `${BASE_URL}/user/getAllUsers`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'authorization': 'Bearer ' + token
+    }
+  }
+  ).then((res) => {
+    return res.data.data
+  }).catch((error) => {
+    return error.response.data.error
+  })
 }
 
 
-export { signUpApi, loginApi }
+export { signUpApi, loginApi, getAllUsers }

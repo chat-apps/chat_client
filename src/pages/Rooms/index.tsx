@@ -1,152 +1,104 @@
-import { useState } from 'react';
-import { Box, Button, IconButton, InputAdornment, TextField, Typography } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { Box, Button, CircularProgress, Divider, Typography } from '@mui/material';
 import { makeStyles } from '@mui/styles';
-import { Send } from '@mui/icons-material';
 import { removeItemFromLocalStorage } from '../../utils';
 import ChatBox from '../../components/ChatBox/index';
+import { useUserContext } from '../../context/user.context';
+import { getAllUsers } from '../../helpers/login.helper';
+import { toast } from 'react-toastify';
+import { errorToast } from '../../utils/toast';
+import ChatList from '../../components/ChatList';
+import Loader from '../../components/Loader';
+import { RoomPropsInterface } from '../../components/types';
 
 const useStyles = makeStyles({
   root: {
     width: '100vw',
-    height: '100vh',
-    display: 'flex',
-    background: 'antiquewhite'
+    maxHeight: '100vh',
   },
   row: {
     justifyContent: 'center',
-    margin: 'auto',
-    width: 1000,
-    height: 600,
-    display: 'flex'
+    width: '100%',
+    display: 'flex',
+    height: '100vh'
   },
   col4: {
-    background: '#333',
-    width: '30%',
-    padding: '24px'
+    background: '#141f52',
+    width: '20%',
+    padding: '20px 0',
+    overflowY: 'scroll',
+    position: 'relative'
   },
   col6: {
     background: '#f6f6f6',
-    width: '70%',
-    padding: '24px',
-    overflowY: 'auto'
+    width: '80%',
+    padding: '0 24px',
+    height: '100vh'
   },
-  searchInput: {
-    color: '#aaa',
-    fontSize: '0.5rem'
-  },
-  box: {
+  logoutButton: {
+    background: 'black',
+    padding: '20px 0',
+    width: '100%',
     display: 'flex',
-    alignItems: 'center',
-    marginBottom: '16px'
+    justifyContent: 'center',
+    alignItems: 'center'
   },
-  avatar: {
-    width: 50,
-    borderRadius: '50%',
-    marginRight: 10
-  },
-  notice: {
-    background: 'green',
-    borderRadius: '50%',
-    padding: '2px 5px',
-    color: '#fff',
-    marginLeft: '8px'
-  },
-  name: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottom: '1px solid #ccc',
-    paddingBottom: '8px',
-    marginBottom: '16px'
-  },
-  dialog: {
-    padding: '3%',
-    marginRight: '10px',
-    maxWidth: '250px',
-    borderRadius: '0.5rem',
-    position: 'relative',
-    background: '#ccc',
-    color: 'black'
-  },
-  other: {
-    marginBottom: '20px',
-    width: '40%'
-  },
-  self: {
-    flexDirection: 'row-reverse',
-    marginBottom: '20px',
-    float: 'right',
-    width: '40%'
-  },
-  selfDialog: {
-    background: '#9eea9e',
-    marginLeft: '15px'
-  },
-  chat: {
-    height: '400px',
-    overflowY: 'auto',
-    paddingTop: 20,
-    paddingLeft: 20,
-    paddingRight: 20
-  },
-  chatTime: {
-    alignSelf: 'flex-end',
-    marginBottom: 0
-  },
-  read: {
-    position: 'absolute',
-    transform: 'translate(30px, 30px)'
-  },
-  msg: {
-    height: '80px',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between'
-  },
-  msgInput: {
-    backgroundColor: '#f6f6f6',
-    border: 'none',
-    fontSize: '0.2rem'
-  },
-  inputIcon: {
-    color: '#777'
-  }
 });
 
 const ChatPage = () => {
   const classes = useStyles();
-  const [messageReceived, setMessageReceived] = useState<string[]>([]);
+  const { state } = useUserContext()
+  const [ loading, setLoading ] = useState<boolean>(false)
+  const [activeRoom, setActiveRoom] = useState<RoomPropsInterface>({
+    username: 'Zeshan Shakil',
+    status: true,
+  })
+  
+  useEffect(() => {
+    setLoading(true)
+    const fetchUsers = async () => {
+      if (!state.token) return
+      
+      await getAllUsers(state.token).then((res) => {
+      }).catch((err) => {
+        errorToast(err)
+      }).finally(() => {
+        setLoading(false)
+      })
+    }
+    
+    fetchUsers()
+  }, [])
 
   const handleLogout = async () => {
     await removeItemFromLocalStorage('user');
     window.location.reload();
   };
-
-  const handleSendMessage = async (item: string) => {
-
+  const handleSetActiveRoom = async (item: RoomPropsInterface) => {
+    setActiveRoom({username: item.username,status: item.status});
   };
+
+  const handleSendMessage = async (item: string) => {};
 
   return (
     <Box className={classes.root}>
-      <Box className={classes.row}>
+      {loading ? <Loader isLoading={true} /> : (
+        <Box className={classes.row}>
         <Box className={`${classes.col4} shadow`} position={'relative'}>
-          <Box className={classes.box}>
-            <img src="https://picsum.photos/50/50/?random=1" className={classes.avatar} alt="avatar" />
-            <Box>
-              <Typography variant="body1" style={{ color: '#fff', marginBottom: 0 }}>
-                Maine Coon
-              </Typography>
-              <Typography variant="body2" style={{ color: '#fff' }}>
-                Lorem ipsum dolor sit ...
-              </Typography>
-            </Box>
-          </Box>
-          <Button onClick={handleLogout} sx={{ bgcolor: 'black', py: 2, position: 'absolute', bottom: 0, width: '100%', left: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <ChatList onClick={handleSetActiveRoom} status={true} name='Zeshan Shakil' lastMessage='mera last msg 1' />
+          <ChatList onClick={handleSetActiveRoom} status={false} name='Shani Shakil' lastMessage='mera last msg 2' />
+          <ChatList onClick={handleSetActiveRoom} status={false} name='Daniyal Shakil' lastMessage='mera last msg 3' />
+          <ChatList onClick={handleSetActiveRoom} status={true} name='Shaheer Shakil' lastMessage='mera last msg 4' />
+          <ChatList onClick={handleSetActiveRoom} status={false} name='Areeba Shakil' lastMessage='mera last msg 5' />
+        </Box>
+      <Box className={`${classes.col6} shadow`}>
+        <ChatBox room={activeRoom} receivedMessage={['Hi Baby How are you']} sendMessage={handleSendMessage} myMessages={['Hi Baby Im Fine']}  />
+          <Button onClick={handleLogout} className={classes.logoutButton}>
             <Typography color={'white'}>Logout</Typography>
           </Button>
         </Box>
-        <ChatBox receivedMessage={undefined} sendMessage={handleSendMessage} myMessages={undefined}  />
       </Box>
+    )}
     </Box>
   );
 };

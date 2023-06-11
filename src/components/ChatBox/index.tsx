@@ -1,22 +1,19 @@
-import { Send } from '@mui/icons-material';
-import { Box, IconButton, InputAdornment, TextField, Typography } from '@mui/material';
+import { Face, Send } from '@mui/icons-material';
+import { Box, IconButton, InputAdornment, ListItem, TextField, Typography } from '@mui/material';
 import { makeStyles } from '@mui/styles';
-import { ChatBoxInterface } from '../types';
+import { ChatBoxPropsInterface } from '../types';
+import React, { ChangeEvent, useState } from 'react';
+import Avatar from '../Avatar';
+import Picker from '@emoji-mart/react'
+import data from '@emoji-mart/data'
+
 
 const useStyles = makeStyles({
-  col6: {
-    background: '#f6f6f6',
-    width: '70%',
-    padding: '24px',
-    overflowY: 'auto'
-  },
   name: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     borderBottom: '1px solid #ccc',
-    paddingBottom: '8px',
-    marginBottom: '16px'
+    display: 'flex',
+    alignItems: 'center',
+    padding: '15px 5px',
   },
   dialog: {
     padding: '3%',
@@ -42,8 +39,8 @@ const useStyles = makeStyles({
     marginLeft: '15px'
   },
   chat: {
-    height: '400px',
-    overflowY: 'auto',
+    height: 'calc(100% - 240px)', 
+    overflowY: 'scroll',
     paddingTop: 20,
     paddingLeft: 20,
     paddingRight: 20
@@ -64,20 +61,34 @@ const useStyles = makeStyles({
   }
 });
 
-const ChatBox = ({receivedMessage, myMessages, sendMessage}: ChatBoxInterface) => {
+const ChatBox = ({receivedMessage, myMessages, sendMessage, room}: ChatBoxPropsInterface) => {
   const classes = useStyles();
-
+  const [inputValue, setInputValue] = useState<string>('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  
   const handleSendMessage = () => {
     sendMessage('sendMessage',)
   }
+  const handleOnChange = (item: string) => {
+    console.log(item);
+    
+    setInputValue(item)
+  }
+
+  const handleToggleEmojiPicker = () => {
+    setShowEmojiPicker(!showEmojiPicker);
+  };
 
   return (
-    <Box className={`${classes.col6} shadow`}>
-          <Box className={classes.name}>
-            <Typography variant="body1">Maine Coon</Typography>
-            <Typography variant="body2" color="textSecondary">
-              Online
-            </Typography>
+    <React.Fragment>
+      <Box className={classes.name}>
+        <Avatar name={room.username} />
+        <Box>
+            <Typography variant="body1">{room.username}</Typography>
+          {room.status ? <Typography variant="body2" color="textSecondary">
+          Online
+          </Typography> : null}
+        </Box>
           </Box>
           <Box className={classes.chat}>
             {receivedMessage.map((msg: any) => {
@@ -90,28 +101,40 @@ const ChatBox = ({receivedMessage, myMessages, sendMessage}: ChatBoxInterface) =
               );
             })}
         {myMessages.map((msg: any) => {
-        return  <Box className={`${classes.self} ${classes.dialog} ${classes.selfDialog}`}>
+          return  <Box className={`${classes.self} ${classes.dialog} ${classes.selfDialog}`}>
                   <Typography variant="body1">{msg}</Typography>
                 </Box>
             })}
           </Box>
           <form className={classes.msg}>
-            <TextField
-              placeholder="Type a message..."
-              variant="outlined"
-              className={classes.msgInput}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={handleSendMessage} className={classes.inputIcon}>
-                      <Send />
-                    </IconButton>
-                  </InputAdornment>
-                )
-              }}
-            />
+          <TextField
+          placeholder="Type a message..."
+          variant="outlined"
+          onChange={(e: ChangeEvent<HTMLInputElement>) => handleOnChange(e.target.value)}
+          className={classes.msgInput}
+          value={inputValue}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <IconButton onClick={handleToggleEmojiPicker} className={classes.inputIcon}>
+                  <Face />
+                </IconButton>
+                {showEmojiPicker && <ListItem onBlur={handleToggleEmojiPicker} sx={{position: 'absolute', bottom: 50, left: -10}}>
+                <Picker data={data} onSelect={console.log} />
+                </ListItem>}
+              </InputAdornment>
+            ),
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={handleSendMessage} className={classes.inputIcon}>
+                  <Send />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
           </form>
-        </Box>
+              </React.Fragment>
   )
 }
 

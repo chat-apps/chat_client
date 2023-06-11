@@ -1,25 +1,49 @@
-import React, { useContext } from 'react';
+import { useEffect } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import AuthenticatedRoutes from './routes/authenticated.routes';
 import UnauthenticatedRoutes from './routes/unauthenticated.routes';
-import UserStates from './context/user.context/socket.state';
 import SocketStates from './context/socket.context/socket.state';
-import UserContext from './context/user.context';
+import { useUserContext } from './context/user.context';
+import { getItemFromLocalStorage } from './utils';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-function App() {
-  const { state } = useContext(UserContext)
+const App = () => {
+  const { state, handleSetUser, handleSetToken } = useUserContext();
   const { token } = state
-  console.log(token)
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      let response: any = await getItemFromLocalStorage('user');
+      response = await JSON.parse(response)
+      
+      if (!!response) {
+        handleSetUser({ ID: response.user.ID, name: response.user.name });
+        handleSetToken(response.token);
+      };
+    }
+    fetchUser();
+  }, [])
+  
   return (
-    <UserStates>
-      <SocketStates>
+    <SocketStates>
         <Router>
+        <ToastContainer
+          position="top-right"
+          autoClose={1000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+          />
             {token ? <AuthenticatedRoutes /> : <UnauthenticatedRoutes />}
         </Router>
-      </SocketStates>
-    </UserStates>
+    </SocketStates>
   );
 }
 
-export default App;
+export default App
