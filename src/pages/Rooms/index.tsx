@@ -1,105 +1,237 @@
 import { useEffect, useState } from 'react';
-import { Box, Button, CircularProgress, Divider, Typography } from '@mui/material';
-import { makeStyles } from '@mui/styles';
+import { Box, Button, Typography } from '@mui/material';
+import { styled } from '@mui/styles';
 import { removeItemFromLocalStorage } from '../../utils';
 import ChatBox from '../../components/ChatBox/index';
 import { useUserContext } from '../../context/user.context';
-import { getAllUsers } from '../../helpers/login.helper';
-import { toast } from 'react-toastify';
+import { createRoom, getRoomById, getRoomByLinkedUserId, getUserRooms } from '../../helpers/room.helper';
+import useSocket from '../../hooks/use-socket';
 import { errorToast } from '../../utils/toast';
 import ChatList from '../../components/ChatList';
 import Loader from '../../components/Loader';
-import { RoomPropsInterface } from '../../components/types';
+import { MyRoomsStateInterface, RoomPropsInterface } from '../../components/types';
+import { getAllUsers } from '../../helpers/login.helper';
+import Welcome from '../../components/welcome';
+import { ClosedCaption, Slideshow } from '@mui/icons-material';
+import { GetRoomApiRes } from '../../helpers/api-response';
+import { SOCKET_URL } from '../../common';
+import { OnlineUsersResponse } from '../../hooks/types';
 
-const useStyles = makeStyles({
-  root: {
-    width: '100vw',
-    maxHeight: '100vh',
-  },
-  row: {
-    justifyContent: 'center',
-    width: '100%',
-    display: 'flex',
-    height: '100vh'
-  },
-  col4: {
-    background: '#141f52',
-    width: '20%',
-    padding: '20px 0',
-    overflowY: 'scroll',
-    position: 'relative'
-  },
-  col6: {
-    background: '#f6f6f6',
-    width: '80%',
-    padding: '0 24px',
-    height: '100vh'
-  },
-  logoutButton: {
-    background: 'black',
-    padding: '20px 0',
-    width: '100%',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
+const RootContainer = styled(Box)({
+  width: '100vw',
+  maxHeight: '100vh',
+});
+
+const RowContainer = styled(Box)({
+  justifyContent: 'center',
+  width: '100%',
+  display: 'flex',
+  height: '100vh',
+});
+
+const LeftColumn = styled(Box)({
+  background: '#141f52',
+  overflowY: 'scroll',
+  position: 'fixed',
+  top: 0,
+  bottom: 0,
+  left: 0,
+  width: 280,
+  padding: '20px 0px',
+  zIndex: 10,
+});
+
+const RoomCard = styled(Box)({
+  marginBottom: 8,
+  overflowY: 'scroll',
+  position: 'relative',
+});
+
+const RightColumn = styled(Box)({
+  background: '#f6f6f6',
+  padding: '0 24px',
+  height: '100vh',
+});
+
+const LogoutButton = styled(Button)({
+  background: 'black',
+  padding: '20px 0',
+  width: '100%',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+});
+
+const HideShowButton = styled(Button)({
+  background: '#a7181800',
+  padding: '8px',
+  border: 'none',
+  color: '#fff',
+  cursor: 'pointer',
+  position: 'absolute',
+  top: 10,
 });
 
 const ChatPage = () => {
-  const classes = useStyles();
-  const { state } = useUserContext()
-  const [ loading, setLoading ] = useState<boolean>(false)
-  const [activeRoom, setActiveRoom] = useState<RoomPropsInterface>({
-    username: 'Zeshan Shakil',
-    status: true,
-  })
-  
+  const { state } = useUserContext();
+  const { activeUsers, disconnect } = useSocket(SOCKET_URL, state.userID)
+  const [loading, setLoading] = useState<boolean>(false);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [onlineUsers, setOnlineUsers] = useState<number[]>([]);
+  const [myRooms, setMyRooms] = useState<MyRoomsStateInterface[]>([]);
+  const [activeRoom, setActiveRoom] = useState<RoomPropsInterface | null>(null);
+  const [isChatListVisible, setChatListVisible] = useState<boolean>(true);
+
   useEffect(() => {
-    setLoading(true)
-    const fetchUsers = async () => {
-      if (!state.token) return
-      
-      await getAllUsers(state.token).then((res) => {
-      }).catch((err) => {
-        errorToast(err)
-      }).finally(() => {
-        setLoading(false)
-      })
+    const fetchInitialData = async () => {
+      setLoading(true);
+      handleGetMyRooms()
+      handleGetAllUsers()
+      setLoading(false);
+    };
+
+    if (!allUsers.length && !myRooms.length) {
+      fetchInitialData();
     }
-    
-    fetchUsers()
-  }, [])
+
+    return 
+  }, [state.token, allUsers.length, myRooms.length, state.userID]);
+
+  const handleCreateNewRoom = async (id: number) => {
+    if (!state.token) return;
+
+    const body = { linkedUser: id };
+
+    const response = await createRoom(body, state.token);
+    if (response.success) {
+      handleGetMyRooms()
+      return response.data
+    } else errorToast(response)
+  };
+
+  const handleGetAllUsers = async () => {
+    if (!state.token) return;
+    const usersRes = await getAllUsers(state.token);
+  
+      if (usersRes.success) setAllUsers(usersRes.data);
+  };
+
+  const handleGetMyRooms = async () => {
+    if (!state.token) return;
+
+    const response = await getUserRooms(state.token);
+    if (response.success) {
+      const myRoomsData = response.data.map((item: GetRoomApiRes) => {
+        return {
+          ID: item.ID,
+          linkedUserId: item.linkedUser.ID,
+          lastMessage: item.messages[0]?.text,
+        }
+      });
+      setMyRooms(myRoomsData);
+    } else errorToast(response)
+  };
+
+  const handleGetRoomById = async (id: number) => {
+    if (!state.token) return;
+    const response = await getRoomById(state.token, id) 
+    if (response.success) {
+      let room = response.data as GetRoomApiRes
+      const config = {
+        ID: room.ID,
+        name: room.linkedUser.name,
+        linkedUserId: room.linkedUserId,
+        userId: room.userID,
+        status: handleCheckUserActiveOrNot(room.linkedUserId),
+      }
+      setActiveRoom(config)
+    } else errorToast(response)
+  };
+
+  const handleGetRoomByLinkedUserId = async (id: number): Promise<GetRoomApiRes | undefined> => {
+    if (!state.token) return;
+    const response = await getRoomByLinkedUserId(state.token, id) 
+    if (response.success) {
+      return response.data
+    } else errorToast(response)
+   };
 
   const handleLogout = async () => {
+    // disconnect(state.userID)
     await removeItemFromLocalStorage('user');
     window.location.reload();
   };
-  const handleSetActiveRoom = async (item: RoomPropsInterface) => {
-    setActiveRoom({username: item.username,status: item.status});
+
+  const handleSetActiveRoom = async (linkeduserId: number, roomId: number | undefined) => {
+    if (roomId && myRooms.some(item => item.ID === roomId)) {
+      handleGetRoomById(roomId);
+    } else {
+      let room = await handleGetRoomByLinkedUserId(linkeduserId)
+      if (room) {
+        const config = {
+          ID: room.ID,
+          name: room.linkedUser.name,
+          linkedUserId: room.linkedUserId,
+          userId: room.userID,
+          status: handleCheckUserActiveOrNot(room.linkedUserId),
+        }
+      setActiveRoom(config)
+      } else { 
+        let data = await handleCreateNewRoom(linkeduserId)
+        handleGetRoomById(data.ID);
+      }
+    }
   };
 
-  const handleSendMessage = async (item: string) => {};
+  const handleCheckUserActiveOrNot = (id: number) => {
+    return onlineUsers.includes(id)
+  };
+
+  const toggleChatListVisibility = () => {
+    setChatListVisible(prevState => !prevState);
+  };
 
   return (
-    <Box className={classes.root}>
-      {loading ? <Loader isLoading={true} /> : (
-        <Box className={classes.row}>
-        <Box className={`${classes.col4} shadow`} position={'relative'}>
-          <ChatList onClick={handleSetActiveRoom} status={true} name='Zeshan Shakil' lastMessage='mera last msg 1' />
-          <ChatList onClick={handleSetActiveRoom} status={false} name='Shani Shakil' lastMessage='mera last msg 2' />
-          <ChatList onClick={handleSetActiveRoom} status={false} name='Daniyal Shakil' lastMessage='mera last msg 3' />
-          <ChatList onClick={handleSetActiveRoom} status={true} name='Shaheer Shakil' lastMessage='mera last msg 4' />
-          <ChatList onClick={handleSetActiveRoom} status={false} name='Areeba Shakil' lastMessage='mera last msg 5' />
-        </Box>
-      <Box className={`${classes.col6} shadow`}>
-        <ChatBox room={activeRoom} receivedMessage={['Hi Baby How are you']} sendMessage={handleSendMessage} myMessages={['Hi Baby Im Fine']}  />
-          <Button onClick={handleLogout} className={classes.logoutButton}>
-            <Typography color={'white'}>Logout</Typography>
-          </Button>
-        </Box>
-      </Box>
-    )}
-    </Box>
+    <RootContainer>
+      {loading ? (
+        <Loader isLoading={true} />
+      ) : (
+        <RowContainer>
+            {isChatListVisible && (
+          <LeftColumn className="shadow" position="relative">
+              <Box>
+                  {allUsers.map(user => {
+                  const room = {
+                    userName: user.name,
+                    userId: user.ID,
+                    ID: myRooms.find(({ linkedUserId }) => linkedUserId === user.ID)?.ID,
+                    lastMessage: myRooms.find(({ linkedUserId }) => linkedUserId === user.ID)?.lastMessage,
+                  };
+                  return (
+                    <RoomCard key={user.ID}>
+                      <ChatList
+                        status={!!activeUsers.find((active: OnlineUsersResponse) => active.userId === user.ID)}
+                        handleOnClick={handleSetActiveRoom}
+                        room={room}
+                      />
+                    </RoomCard>
+                  );
+                })}
+              </Box>
+          </LeftColumn>
+            )}
+            <HideShowButton  onClick={toggleChatListVisibility} sx={{left: isChatListVisible? 310 : 30}}>
+              {!isChatListVisible ? <Slideshow fontSize='large' /> : <ClosedCaption fontSize='large' />}
+            </HideShowButton>
+          <RightColumn className={`shadow`} sx={{width: '100%'}}>
+            {activeRoom ? <ChatBox room={activeRoom} /> : <Welcome />}
+            <LogoutButton onClick={handleLogout}>
+              <Typography color="white">Logout</Typography>
+            </LogoutButton>
+          </RightColumn>
+        </RowContainer>
+      )}
+    </RootContainer>
   );
 };
 
