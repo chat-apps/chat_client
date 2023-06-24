@@ -7,7 +7,11 @@ const signUpApi = async (body: SignUpUserInterface) => {
     `${BASE_URL}/user/register`, body, {
     headers: { 'Content-Type': 'application/json' }
   }
-  )
+  ).then((res) => {
+    return res.data
+  }).catch((error) => {
+    return error.response.data.error || error.response.data.errors[0].msg
+  })
 }
 
 const loginApi = async (body: LoginUserInterface) => {
@@ -15,7 +19,11 @@ const loginApi = async (body: LoginUserInterface) => {
     `${BASE_URL}/user/login`, body, {
     headers: { 'Content-Type': 'application/json' }
   }
-  )
+  ).then((res) => {
+    return res.data
+  }).catch((error) => {
+    return error.response.data.error || error.response.data.errors[0].msg
+  })
 }
 
 const getAllUsers = async (token: string) => {
@@ -27,7 +35,7 @@ const getAllUsers = async (token: string) => {
     }
   }
   ).then((res) => {
-    return res.data.data
+    return res.data
   }).catch((error) => {
     return error.response.data.error
   })

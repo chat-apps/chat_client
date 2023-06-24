@@ -11,6 +11,7 @@ import { loginApi } from '../../helpers/login.helper';
 import { setItemToLocalStorage } from '../../utils';
 import UserContext, { useUserContext } from '../../context/user.context';
 import { toast } from 'react-toastify';
+import { errorToast, successToast } from '../../utils/toast';
 
 
 const LoginPage = () => {
@@ -32,24 +33,15 @@ const LoginPage = () => {
 
   const handleLogin = async (body: any) => {
     setLoading(true)
-    await loginApi(body).then((res: any) => {
-      if (res.data.success) {
-        handleIfSuccess(res?.data?.data, res?.data?.token);
-        toast('logged-in to your account', {
-          type: 'success',
-        });
-      } else {
-        toast(JSON.stringify(res), {
-          type: 'error',
-        });
-      }
-    }).catch((error) => {
-      toast(error?.response?.data?.error, {
-        type: 'error',
-      });
-    }).finally(() => {
-      setLoading(false)
-    })
+    const response =await loginApi(body)
+    if (response?.success) {
+      handleIfSuccess(response?.data, response?.token);
+      successToast('logged-in to your account')
+    } else {
+      errorToast(response)
+    }
+    setLoading(false)
+     
   }
   
   const handleIfSuccess = (user: any, token: string) => {

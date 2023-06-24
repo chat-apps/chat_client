@@ -1,22 +1,23 @@
 import { Face, Send } from '@mui/icons-material';
 import { Box, IconButton, InputAdornment, ListItem, TextField, Typography } from '@mui/material';
 import { makeStyles } from '@mui/styles';
-import { ChatBoxPropsInterface } from '../types';
-import React, { ChangeEvent, useState } from 'react';
+import React, { ChangeEvent, useEffect, useState } from 'react';
 import Avatar from '../Avatar';
 import Picker from '@emoji-mart/react'
 import data from '@emoji-mart/data'
-
+import { getRoomMessages as getRoomMessagesApi, sendMessage } from '../../helpers/message.helper'
+import { useUserContext } from '../../context/user.context';
+import { ChatBoxPropsInterface, MessageApiResponse, MessagesState } from '../types';
 
 const useStyles = makeStyles({
   name: {
     borderBottom: '1px solid #ccc',
     display: 'flex',
     alignItems: 'center',
-    padding: '15px 5px',
+    padding: '15px 100px',
   },
   dialog: {
-    padding: '3%',
+    padding: 20,
     marginRight: '10px',
     maxWidth: '250px',
     borderRadius: '0.5rem',
@@ -61,17 +62,41 @@ const useStyles = makeStyles({
   }
 });
 
-const ChatBox = ({receivedMessage, myMessages, sendMessage, room}: ChatBoxPropsInterface) => {
+const ChatBox = ({ room }: ChatBoxPropsInterface) => {
+  const { state } = useUserContext();
   const classes = useStyles();
   const [inputValue, setInputValue] = useState<string>('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  
-  const handleSendMessage = () => {
-    sendMessage('sendMessage',)
+  const [messages, setMessages] = useState<MessagesState>();
+
+  useEffect(() => { 
+    getRoomMessages()
+  }, [ room ])
+
+  const getRoomMessages = async () => {
+    if (!state.token) return;
+    const response = await getRoomMessagesApi(room.ID, state.token)
+    if (response.success) {
+      console.log('====================================');
+      console.log(response.data);
+      console.log('====================================');
+      const { myMessages, receiverMessages } = messageSeparator(response.data)
+      setMessages((pre) => ({ ...pre, myMessages, receiverMessages }))
+   }
   }
+  
+  const handleSendMessage = async () => {
+    if (!state.token) return;
+
+    const body = { text: inputValue, roomID: room.ID }
+    const response = await sendMessage(body, state.token)
+    if (response.success) {
+      const { myMessages, receiverMessages } = messageSeparator(response.data)
+      setMessages((pre) => ({ ...pre, myMessages, receiverMessages }))
+    }
+  }
+
   const handleOnChange = (item: string) => {
-    console.log(item);
-    
     setInputValue(item)
   }
 
@@ -79,32 +104,49 @@ const ChatBox = ({receivedMessage, myMessages, sendMessage, room}: ChatBoxPropsI
     setShowEmojiPicker(!showEmojiPicker);
   };
 
+  const messageSeparator = (item: MessageApiResponse | MessageApiResponse[]): MessagesState => {
+    const myMessages: string[] = [];
+    const receiverMessages: string[] = []
+
+    if (Array.isArray(item)) { 
+      item.forEach((val: MessageApiResponse) => {
+        if (val.userID === room.userId) myMessages.push(val.text) 
+        else if (val.userID === room.linkedUserId) receiverMessages.push(val.text) 
+      })
+    } else {
+      if (item.userID === room.userId) myMessages.push(item.text) 
+      else if (item.userID === room.linkedUserId) receiverMessages.push(item.text) 
+    }
+    return { myMessages, receiverMessages }
+  }
+
   return (
     <React.Fragment>
       <Box className={classes.name}>
-        <Avatar name={room.username} />
+        <Avatar name={room.name} />
         <Box>
-            <Typography variant="body1">{room.username}</Typography>
+            <Typography variant="body1">{room.name}</Typography>
           {room.status ? <Typography variant="body2" color="textSecondary">
           Online
           </Typography> : null}
         </Box>
           </Box>
           <Box className={classes.chat}>
-            {receivedMessage.map((msg: any) => {
+            {messages?.receiverMessages.map((msg: string, index: number) => {
               return (
-                <Box key={Math.random()} className={`${classes.other} ${classes.dialog}`}>
+                <Box key={index} className={`${classes.other} ${classes.dialog}`}>
                   <Typography sx={{ marginLeft: 1 }} variant="body1">
                     {msg}
                   </Typography>
                 </Box>
               );
             })}
-        {myMessages.map((msg: any) => {
-          return  <Box className={`${classes.self} ${classes.dialog} ${classes.selfDialog}`}>
-                  <Typography variant="body1">{msg}</Typography>
-                </Box>
-            })}
+        {messages?.myMessages.map((msg: string, index: number) => {
+          return (
+            <Box key={index} className={`${classes.self} ${classes.dialog} ${classes.selfDialog}`}>
+              <Typography variant="body1">{msg}</Typography>
+            </Box>
+          )})}
           </Box>
           <form className={classes.msg}>
           <TextField
@@ -119,9 +161,10 @@ const ChatBox = ({receivedMessage, myMessages, sendMessage, room}: ChatBoxPropsI
                 <IconButton onClick={handleToggleEmojiPicker} className={classes.inputIcon}>
                   <Face />
                 </IconButton>
-                {showEmojiPicker && <ListItem onBlur={handleToggleEmojiPicker} sx={{position: 'absolute', bottom: 50, left: -10}}>
-                <Picker data={data} onSelect={console.log} />
-                </ListItem>}
+                {showEmojiPicker &&
+                  <ListItem onBlur={handleToggleEmojiPicker} sx={{ position: 'absolute', bottom: 50, left: -10 }}>
+                    <Picker data={data} />
+                  </ListItem>}
               </InputAdornment>
             ),
             endAdornment: (
@@ -134,7 +177,7 @@ const ChatBox = ({receivedMessage, myMessages, sendMessage, room}: ChatBoxPropsI
           }}
         />
           </form>
-              </React.Fragment>
+      </React.Fragment>
   )
 }
 

@@ -1,15 +1,18 @@
 export interface ChatBoxPropsInterface {
-  receivedMessage: string[];
-  sendMessage: (args: string) => void;
-  myMessages: string[];
   room: RoomPropsInterface;
 }
 
 export interface ChatListPropsInterface {
-  lastMessage: string;
-  name: string;
   status: boolean;
-  onClick: (args: RoomPropsInterface) => void;
+  room: CardRoomInterface;
+  handleOnClick: (arg1: number, arg2?: number) => void;
+}
+
+interface CardRoomInterface {
+  userName: string;
+  userId: number;
+  ID?: number;
+  lastMessage?: string;
 }
 
 export interface AvatarPropsInterface {
@@ -20,6 +23,24 @@ export interface LoaderPropsInterface {
   isLoading: boolean;
 }
 export interface RoomPropsInterface {
-  username: string;
+  ID: number;
+  name: string;
   status: boolean;
+  userId: number;
+  linkedUserId: number;
+}
+
+export interface MyRoomsStateInterface {
+  ID: number;
+  linkedUserId: number;
+  lastMessage: string;
+}
+
+export interface MessagesState {
+  myMessages: string[];
+  receiverMessages: string[];
+}
+export interface MessageApiResponse {
+  text: string,
+  userID: number
 }

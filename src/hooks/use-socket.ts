@@ -1,31 +1,30 @@
 import { useEffect, useState } from 'react';
 import io, { Socket } from 'socket.io-client';
+import { OnlineUsersResponse } from './types';
 
-const useSocket = (socketUrl: string) => {
+const useSocket = (socketUrl: string, userID: number) => {
   const [socket, setSocket] = useState<Socket<any>>();
-  const [activeUsers, setActiveUsers] = useState([]);
+  const [activeUsers, setActiveUsers] = useState<OnlineUsersResponse[]>([]);
 
   useEffect(() => {
     const newSocket = io(socketUrl);
-
     newSocket.on('activeUsers', (users) => {
       setActiveUsers(users);
     });
 
     setSocket(newSocket);
+    newSocket.emit('join', userID);
 
-    return () => {
-      newSocket.disconnect();
-    };
-  }, [socketUrl]);
+  }, [socketUrl, userID]);
 
-  const join = (id: number) => {
+  const disconnect = (id: number) => {
     if (socket) {
-      socket.emit('join', id);
+      socket.emit('disconnect', id)
     }
-  };
+  }
 
-  return { socket, activeUsers, join };
+
+  return { socket, activeUsers, disconnect };
 };
 
 export default useSocket;

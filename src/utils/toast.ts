@@ -5,8 +5,8 @@ const successToast = (msg: string) => {
     type: 'success',
   })
 }
-const errorToast = (msg: string) => {
-  toast(msg, {
+const errorToast = (msg?: string) => {
+  toast(msg ?? 'Something went Wrong', {
     type: 'error',
   })
 }

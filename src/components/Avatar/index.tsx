@@ -20,7 +20,6 @@ const useStyles = makeStyles({
 
 const Avatar = ({ name }: AvatarPropsInterface) => {
   const classes = useStyles()
-
   const avatar = name.split(' ').map((value) => value.charAt(0).toUpperCase()).join('');
 
   return (

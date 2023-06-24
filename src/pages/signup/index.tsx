@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useState } from 'react';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
 import TextField from '@mui/material/TextField';
@@ -10,11 +10,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { signUpApi } from '../../helpers/login.helper';
 import { setItemToLocalStorage } from '../../utils';
 import { useUserContext } from '../../context/user.context';
-import { toast } from 'react-toastify';
+import { errorToast, successToast } from '../../utils/toast';
 
 const SignUpPage = () => {
   const { handleSetUser, handleSetToken } = useUserContext();
   const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -28,22 +30,15 @@ const SignUpPage = () => {
   };
 
   const handleSignUp = async (body: any) => {
-    await signUpApi(body).then((res: any) => {
-      if (res?.data?.success) {
-        handleIfSuccess(res?.data?.data, res?.data?.token);
-        toast('Successfully Signup by new account', {
-          type: 'success',
-        });
+    setLoading(true)
+    const response = await signUpApi(body)
+    if (response?.success) {
+        handleIfSuccess(response?.data, response?.token);
+        successToast('Successfully Signup by new account')
       } else {
-        toast(JSON.stringify(res), {
-          type: 'error',
-        });
+        errorToast(response)
       }
-    }).catch((error) => {
-      toast(error?.response?.data?.error, {
-        type: 'error'
-      });
-     })
+      setLoading(false)
   }
 
   const handleIfSuccess = (user: any, token: string) => {
@@ -101,7 +96,8 @@ const SignUpPage = () => {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2, py: 2 }}
+            sx={{ mt: 3, mb: 2, py: 2 }}
+            disabled={loading}
             >
               Sign Up
             </Button>

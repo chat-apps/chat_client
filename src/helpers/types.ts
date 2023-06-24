@@ -9,3 +9,10 @@ export interface LoginUserInterface {
   email: string;
   password: string;
 }
+export interface CreateRoomInterface {
+  linkedUser: number;
+}
+export interface SendMessageInterface {
+  roomID: number;
+  text: string
+}

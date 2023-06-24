@@ -20,28 +20,31 @@ const useStyles = makeStyles({
     marginRight: 20,
     borderRadius: '50%',
   },
+  notExistRoom: {
+    backgroundColor: '#2c2c2cff',
+  },
 });
 
-const ChatList = ({ name, lastMessage, status, onClick }: ChatListPropsInterface) => {
+const ChatList = ({ room, handleOnClick, status }: ChatListPropsInterface) => {
   const classes = useStyles();
 
-  const handleOnClick = () => {
-    onClick({ username: name, status: status });
-  };
+  const handleClick = () => {
+      handleOnClick(room.userId, room.ID)
+  }
 
   return (
-    <ListItem button onClick={handleOnClick} className={classes.container}>
+    <ListItem button onClick={handleClick} className={`${classes.container} ${!room?.ID ? classes.notExistRoom : ''}`}>
       <Box className={classes.box}>
-        <Avatar name={name} />
+        <Avatar name={room.userName} />
         <Box>
           <Box style={{ display: 'flex', alignItems: 'center' }}>
             {status && <FiberManualRecord className={classes.activeIcon} />}
             <Typography variant="body1" style={{ color: '#fff', marginBottom: 0 }}>
-              {name}
+              {room.userName}
             </Typography>
           </Box>
           <Typography variant="body2" style={{ color: '#969696' }}>
-            {lastMessage}
+            {room.lastMessage}
           </Typography>
         </Box>
       </Box>
