@@ -21,10 +21,7 @@ const useStyles = makeStyles({
 const Avatar = ({ name }: AvatarPropsInterface) => {
   const classes = useStyles()
   const avatar = name.split(' ').map((value) => value.charAt(0).toUpperCase()).join('');
-
-  return (
-        <Box className={classes.avatar}>{avatar}</Box>
-  )
+  return <Box className={classes.avatar}>{avatar}</Box>
 }
 
 export default Avatar

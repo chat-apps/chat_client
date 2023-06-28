@@ -3,8 +3,10 @@ export interface GetRoomApiRes {
     createdAt: Date;
     updatedAt: Date;
     userID: number;
+    status: boolean;
     linkedUserId: number;
     linkedUser: LinkedUser;
+    user: LinkedUser;
     messages: any[];
 }
 

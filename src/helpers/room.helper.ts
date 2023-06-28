@@ -4,7 +4,7 @@ import { CreateRoomInterface } from "./types"
 
 const createRoom = async (body: CreateRoomInterface, token: string) => {
     return axios.post(
-        `${BASE_URL}/room/createChat`, body, {
+        `${BASE_URL}/room/create-room`, body, {
         headers: {
             'Content-Type': 'application/json',
             'authorization': 'Bearer ' + token
@@ -19,7 +19,7 @@ const createRoom = async (body: CreateRoomInterface, token: string) => {
 
 const getUserRooms = async (token: string) => {
     return axios.get(
-        `${BASE_URL}/room/getUserChats`, {
+        `${BASE_URL}/room/get-user-rooms`, {
         headers: {
             'Content-Type': 'application/json',
             'authorization': 'Bearer ' + token
@@ -32,7 +32,7 @@ const getUserRooms = async (token: string) => {
     })
 }
 
-const getRoomById = async (token: string, roomId: number) => {
+const getRoomById = async (roomId: number, token: string) => {
     return axios.get(
         `${BASE_URL}/room/getRoomById/${roomId}`, {
         headers: {
@@ -47,9 +47,9 @@ const getRoomById = async (token: string, roomId: number) => {
     })
 }
 
-const getRoomByLinkedUserId = async (token: string, linkedUserId: number) => {
-    return axios.get(
-        `${BASE_URL}/room/getRoomByLinkedUserId/${linkedUserId}`, {
+const acceptRoomRequest = async (roomId: number, token: string) => {
+    return axios.patch(
+        `${BASE_URL}/room/accept-room-request/${roomId}`, {}, {
         headers: {
             'Content-Type': 'application/json',
             'authorization': 'Bearer ' + token
@@ -62,5 +62,34 @@ const getRoomByLinkedUserId = async (token: string, linkedUserId: number) => {
     })
 }
 
+const getRoomsRequests = async (token: string) => {
+    return axios.get(
+        `${BASE_URL}/room/get-rooms-requests`, {
+        headers: {
+            'Content-Type': 'application/json',
+            'authorization': 'Bearer ' + token
+        }
+    }
+    ).then((res) => {
+        return res.data
+    }).catch((error) => {
+        return error.response.data.error
+    })
+}
 
-export { createRoom, getUserRooms, getRoomById, getRoomByLinkedUserId }
+const getSentRequests = async (token: string) => {
+    return axios.get(
+        `${BASE_URL}/room/get-sent-requests`, {
+        headers: {
+            'Content-Type': 'application/json',
+            'authorization': 'Bearer ' + token
+        }
+    }
+    ).then((res) => {
+        return res.data
+    }).catch((error) => {
+        return error.response.data.error
+    })
+}
+
+export { createRoom, getUserRooms, getSentRequests, getRoomById, getRoomsRequests, acceptRoomRequest }

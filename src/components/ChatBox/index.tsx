@@ -7,14 +7,23 @@ import Picker from '@emoji-mart/react'
 import data from '@emoji-mart/data'
 import { getRoomMessages as getRoomMessagesApi, sendMessage } from '../../helpers/message.helper'
 import { useUserContext } from '../../context/user.context';
-import { ChatBoxPropsInterface, MessageApiResponse, MessagesState } from '../types';
+import { MessageApiResponse, MessagesState } from '../types';
+
+interface BoxPropsInterface {
+  userName: string;
+  userID: number;
+  ID: number;
+  linkedUserID: number;
+  status: boolean
+}
+
 
 const useStyles = makeStyles({
   name: {
     borderBottom: '1px solid #ccc',
     display: 'flex',
     alignItems: 'center',
-    padding: '15px 100px',
+    padding: '15px 0px',
   },
   dialog: {
     padding: 20,
@@ -62,7 +71,7 @@ const useStyles = makeStyles({
   }
 });
 
-const ChatBox = ({ room }: ChatBoxPropsInterface) => {
+const ChatBox = ({ ID, userID, linkedUserID, userName, status }: BoxPropsInterface) => {
   const { state } = useUserContext();
   const classes = useStyles();
   const [inputValue, setInputValue] = useState<string>('');
@@ -71,15 +80,12 @@ const ChatBox = ({ room }: ChatBoxPropsInterface) => {
 
   useEffect(() => { 
     getRoomMessages()
-  }, [ room ])
+  }, [ ID ])
 
   const getRoomMessages = async () => {
     if (!state.token) return;
-    const response = await getRoomMessagesApi(room.ID, state.token)
+    const response = await getRoomMessagesApi(ID, state.token)
     if (response.success) {
-      console.log('====================================');
-      console.log(response.data);
-      console.log('====================================');
       const { myMessages, receiverMessages } = messageSeparator(response.data)
       setMessages((pre) => ({ ...pre, myMessages, receiverMessages }))
    }
@@ -88,11 +94,15 @@ const ChatBox = ({ room }: ChatBoxPropsInterface) => {
   const handleSendMessage = async () => {
     if (!state.token) return;
 
-    const body = { text: inputValue, roomID: room.ID }
+    const body = { text: inputValue, roomID: ID }
     const response = await sendMessage(body, state.token)
     if (response.success) {
       const { myMessages, receiverMessages } = messageSeparator(response.data)
-      setMessages((pre) => ({ ...pre, myMessages, receiverMessages }))
+      setMessages((pre) => ({
+        myMessages: [...(pre?.myMessages || []), ...myMessages],
+        receiverMessages: [...(pre?.receiverMessages || []), ...receiverMessages]
+      }));
+      setInputValue('')
     }
   }
 
@@ -108,14 +118,13 @@ const ChatBox = ({ room }: ChatBoxPropsInterface) => {
     const myMessages: string[] = [];
     const receiverMessages: string[] = []
 
-    if (Array.isArray(item)) { 
+    if (Array.isArray(item)) {
       item.forEach((val: MessageApiResponse) => {
-        if (val.userID === room.userId) myMessages.push(val.text) 
-        else if (val.userID === room.linkedUserId) receiverMessages.push(val.text) 
+        if (val.userID === userID) myMessages.push(val.text) 
       })
     } else {
-      if (item.userID === room.userId) myMessages.push(item.text) 
-      else if (item.userID === room.linkedUserId) receiverMessages.push(item.text) 
+      if (item.userID === userID) myMessages.push(item.text) 
+      else /* (item.userID === linkedUserID) */ receiverMessages.push(item.text) 
     }
     return { myMessages, receiverMessages }
   }
@@ -123,10 +132,10 @@ const ChatBox = ({ room }: ChatBoxPropsInterface) => {
   return (
     <React.Fragment>
       <Box className={classes.name}>
-        <Avatar name={room.name} />
+        <Avatar name={userName} />
         <Box>
-            <Typography variant="body1">{room.name}</Typography>
-          {room.status ? <Typography variant="body2" color="textSecondary">
+            <Typography variant="body1">{userName}</Typography>
+          {status ? <Typography variant="body2" color="textSecondary">
           Online
           </Typography> : null}
         </Box>
@@ -134,7 +143,7 @@ const ChatBox = ({ room }: ChatBoxPropsInterface) => {
           <Box className={classes.chat}>
             {messages?.receiverMessages.map((msg: string, index: number) => {
               return (
-                <Box key={index} className={`${classes.other} ${classes.dialog}`}>
+                <Box className={`${classes.other} ${classes.dialog}`}>
                   <Typography sx={{ marginLeft: 1 }} variant="body1">
                     {msg}
                   </Typography>
@@ -143,7 +152,7 @@ const ChatBox = ({ room }: ChatBoxPropsInterface) => {
             })}
         {messages?.myMessages.map((msg: string, index: number) => {
           return (
-            <Box key={index} className={`${classes.self} ${classes.dialog} ${classes.selfDialog}`}>
+            <Box className={`${classes.self} ${classes.dialog} ${classes.selfDialog}`}>
               <Typography variant="body1">{msg}</Typography>
             </Box>
           )})}

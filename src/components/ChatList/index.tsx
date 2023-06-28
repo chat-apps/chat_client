@@ -2,7 +2,15 @@ import { Box, Divider, ListItem, Typography } from '@mui/material';
 import { makeStyles } from '@mui/styles';
 import Avatar from '../Avatar';
 import { FiberManualRecord, GraphicEqOutlined } from '@mui/icons-material';
-import { ChatListPropsInterface } from '../types';
+
+export interface RoomListInterface {
+  ID: number;
+  userName: string;
+  status: boolean;
+  userID: number;
+  lastMessage?: string;
+  handleOnClick: (arg1: number) => void;
+}
 
 const useStyles = makeStyles({
   container: {
@@ -20,31 +28,28 @@ const useStyles = makeStyles({
     marginRight: 20,
     borderRadius: '50%',
   },
-  notExistRoom: {
-    backgroundColor: '#2c2c2cff',
-  },
 });
 
-const ChatList = ({ room, handleOnClick, status }: ChatListPropsInterface) => {
+const ChatList = ({ ID, userName, lastMessage, handleOnClick, status }: RoomListInterface) => {
   const classes = useStyles();
 
   const handleClick = () => {
-      handleOnClick(room.userId, room.ID)
+      handleOnClick(ID)
   }
 
   return (
-    <ListItem button onClick={handleClick} className={`${classes.container} ${!room?.ID ? classes.notExistRoom : ''}`}>
+    <ListItem button onClick={handleClick} className={classes.container}>
       <Box className={classes.box}>
-        <Avatar name={room.userName} />
+        <Avatar name={userName} />
         <Box>
           <Box style={{ display: 'flex', alignItems: 'center' }}>
             {status && <FiberManualRecord className={classes.activeIcon} />}
             <Typography variant="body1" style={{ color: '#fff', marginBottom: 0 }}>
-              {room.userName}
+              {userName}
             </Typography>
           </Box>
           <Typography variant="body2" style={{ color: '#969696' }}>
-            {room.lastMessage}
+            {lastMessage}
           </Typography>
         </Box>
       </Box>
