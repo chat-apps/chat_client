@@ -1,23 +1,23 @@
 import { useEffect, useState } from 'react';
 import { Box, Button, Typography } from '@mui/material';
-import { styled } from '@mui/styles';
+import { makeStyles, styled } from '@mui/styles';
 import { removeItemFromLocalStorage } from '../../utils';
 import ChatBox from '../../components/ChatBox/index';
 import { useUserContext } from '../../context/user.context';
 import { acceptRoomRequest, createRoom, getRoomById,getSentRequests, getRoomsRequests, getUserRooms } from '../../helpers/room.helper';
-import useSocket from '../../hooks/use-socket';
 import { errorToast } from '../../utils/toast';
 import ChatList from '../../components/ChatList';
 import UserList from '../../components/UserList';
 import Loader from '../../components/Loader';
-import { getAllUsers } from '../../helpers/login.helper';
+import { getAllUsers } from '../../helpers/user.helper';
 import Welcome from '../../components/welcome';
 import { ClosedCaption, Face, PendingActions, Slideshow } from '@mui/icons-material';
 import { GetRoomApiRes } from '../../helpers/api-response';
 import { SOCKET_URL } from '../../common';
-import { MyRoomsStateInterface, RequestedRoomsInterface } from '../types';
+import { ActiveRoomInterface, MyRoomsStateInterface, RequestedRoomsInterface } from '../types';
 import UserDetailsModal from '../../components/user-Modal';
 import RequestsModalContainer from '../../components/Pending-modal';
+import useSocket from '../../hooks/use-socket';
 
 const RootContainer = styled(Box)({
   width: '100vw',
@@ -61,7 +61,8 @@ const CenterView = styled(Box)({
 const LogoutButton = styled(Button)({
   background: 'black',
   padding: '20px 0',
-  width: '100%',
+  width: '90%',
+  margin: 'auto',
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
@@ -80,10 +81,9 @@ const HideShowButton = styled(Button)({
 
 const CurrentUser = styled(Button)({
   background: '#3e3e3ea3',
-  width: '19%',
   padding: 20,
   position: 'absolute',
-  bottom: 10,
+  bottom: 0,
   zIndex: 10
 });
 
@@ -92,66 +92,54 @@ const PendingRequests = styled(Button)({
   width: '18%',
   padding: 20,
   position: 'absolute',
-  bottom: 10,
+  bottom: 0,
   zIndex: 10,
   right: 0
 });
 
+const useStyles = makeStyles({
+  hideSlideShowIcon: {
+    // display: 'none',
+    // '&:hover': {
+    //   display: 'block'
+    // },
+  }
+});
+
 const ChatPage = () => {
+  const classes = useStyles();
   const { state } = useUserContext();
-  const { activeUsers } = useSocket(SOCKET_URL, state.userID)
+  const { activeUsers, sendMessageToSocket, socket } = useSocket(state.userID)
   const [loading, setLoading] = useState<boolean>(false);
   const [isUserDetailsModalVisible, setIsUserDetailsModalVisible] = useState<boolean>(false);
   const [isPendingRequestModalVisible, setIsPendingRequestModalVisible] = useState<boolean>(false);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [myRooms, setMyRooms] = useState<MyRoomsStateInterface[]>([]);
-  const [roomsRequests, setRoomsRequests] = useState<RequestedRoomsInterface>({
-    ReceiveRequests: [],
-    SentRequests: []
-  });
-  const [activeRoom, setActiveRoom] = useState<MyRoomsStateInterface | null>(null);
+  const [roomsRequests, setRoomsRequests] = useState<RequestedRoomsInterface>({ ReceiveRequests: [], SentRequests: [] });
+  const [activeRoom, setActiveRoom] = useState<ActiveRoomInterface | null>(null);
   const [isChatListVisible, setChatListVisible] = useState<boolean>(true);
   const [isUserListVisible, setUserListVisible] = useState<boolean>(true);
+  const [hasInitialize, setHasInitialize] = useState<boolean>(false);
 
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      setLoading(true);
-      handleGetMyRooms()
-      handleGetAllUsers()
-      handleGetRoomsRequests()
-      handleGetSentRequests()
-      setLoading(false);
-    };
 
-    if (!allUsers.length && !myRooms.length) {
-      fetchInitialData();
-    }
-  }, [state.token, allUsers.length, myRooms.length, state.userID]);
-
-  const handleCreateNewRoom = async (linkedUserId: number) => {
+  const handleCreateNewRoom = async (linkedUserID: number) => {
     if (!state.token) return;
-
-    const body = { linkedUser: linkedUserId };
+    const body = { linkedUserID };
     const response = await createRoom(body, state.token);
-    if (response?.success) {
-      handleGetMyRooms();
-      return response.data
-    } else errorToast(response)
+    if (response?.success) fetchInitialData()
+    else errorToast(response)
   };
-  
+
   const handleAcceptRoomRequest = async (roomId: number) => {
     if (state.token) {
-    const response = await acceptRoomRequest(roomId, state.token);
-      if (response?.success) {
-        handleGetMyRooms();
-        handleSetActiveRoom(roomId);
-        return response.data
-      } else errorToast(response)
+      const response = await acceptRoomRequest(roomId, state.token);
+      fetchInitialData()
+      if (!response?.success) errorToast(response)
     }
   };
-    
-    const handleGetRoomsRequests = async () => {
-      if (!state.token) return;
+
+  const handleGetRoomsRequests = async () => {
+    if (!state.token) return;
 
     const response = await getRoomsRequests(state.token);
     if (response?.success) {
@@ -163,10 +151,10 @@ const ChatPage = () => {
         }
       })
       setRoomsRequests((pre: RequestedRoomsInterface) => ({ ...pre, ReceiveRequests: data }))
-    } else errorToast(response)
-    };
-  
-    const handleGetSentRequests = async () => {
+  } else errorToast(response)
+  };
+
+  const handleGetSentRequests = async () => {
       if (!state.token) return;
 
     const response = await getSentRequests(state.token);
@@ -184,8 +172,9 @@ const ChatPage = () => {
 
   const handleGetAllUsers = async () => {
     if (!state.token) return;
-    const usersRes = await getAllUsers(state.token);
-      if (usersRes.success) setAllUsers(usersRes.data);
+    const response = await getAllUsers(state.token);
+    if (response.success) setAllUsers(response.data);
+    else errorToast(response)
   };
 
   const handleGetMyRooms = async () => {
@@ -196,7 +185,7 @@ const ChatPage = () => {
       const myRoomsData = response.data.map((item: GetRoomApiRes) => {
         return {
           ID: item.ID,
-          linkedUserId: item.linkedUser?.ID,
+          linkedUserID: item.linkedUser?.ID,
           userName: item.linkedUser?.name,
           status: item.status
         }
@@ -210,18 +199,32 @@ const ChatPage = () => {
     const response = await getRoomById(roomId, state.token) 
     if (response?.success) {
       let room = response.data as GetRoomApiRes
-      console.log(room);
-      
       const config = {
         ID: room.ID,
         userName: room.linkedUser.name,
-        linkedUserId: room.linkedUser.ID,
-        activeStatus: handleCheckUserActiveOrNot(room.linkedUser.ID),
-        status: room.status
+        linkedUserID: room.linkedUser.ID,
+        status: room.status,
+        secondRoomID: room.secondRoomID
       }
       setActiveRoom(config)
     } else errorToast(response)
   };
+
+  const fetchInitialData = async () => {
+    setLoading(true);
+    handleGetMyRooms()
+    handleGetAllUsers()
+    handleGetRoomsRequests()
+    handleGetSentRequests()
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (!hasInitialize) {
+      fetchInitialData()
+      setHasInitialize(true)
+    }
+  }, [hasInitialize]);
 
   const handleLogout = async () => {
     await removeItemFromLocalStorage('user');
@@ -236,13 +239,14 @@ const ChatPage = () => {
     await handleCreateNewRoom(userID)
   };
 
-  const handleCheckUserActiveOrNot = (id: number) => {
-    return !!activeUsers.find((e) => e.userId === id)
-  };
+  // const handleCheckUserActiveOrNot = (id: number) => {
+  //   return !!activeUsers.find((e) => e.userID === id)
+  // };
 
   const toggleChatListVisibility = () => {
     setChatListVisible(prevState => !prevState);
   };
+
   const toggleUserListVisibility = () => {
     setUserListVisible(prevState => !prevState);
   };
@@ -252,14 +256,15 @@ const ChatPage = () => {
       {loading ? (
         <Loader isLoading={true} />
       ) : (
+          <>
         <RowContainer>
             {isChatListVisible && (
               <LeftColumn className="shadow" position="relative">
                   <Box>
                       {myRooms.map(room => {
-                      return (
-                        <RoomCard key={room.ID}>
-                          <ChatList lastMessage={room.lastMessage} handleOnClick={handleSetActiveRoom} ID={room.ID} userName={room.userName} status={activeUsers.some((active) => active.userId === room.linkedUserId)} userID={room.linkedUserId} />
+                        return (
+                          <RoomCard key={room.ID}>
+                          <ChatList lastMessage={room.lastMessage} handleOnClick={handleSetActiveRoom} ID={room.ID} userName={room.userName} status={!!activeUsers.some((active) => active.userID === room.linkedUserID)} userID={room.linkedUserID} />
                         </RoomCard>
                       );
                     })}
@@ -267,11 +272,11 @@ const ChatPage = () => {
               </LeftColumn>
             )}
             <HideShowButton  onClick={toggleChatListVisibility} sx={{left: isChatListVisible? 220 : 30}}>
-              {!isChatListVisible ? <Slideshow fontSize='large' /> : <ClosedCaption fontSize='large' />}
+              {!isChatListVisible ? <Slideshow className={!isChatListVisible ? classes.hideSlideShowIcon : '' } fontSize='large' /> : <ClosedCaption fontSize='large' />}
             </HideShowButton>
 
             <CenterView className={`shadow`} sx={{ width: (isChatListVisible && isUserListVisible) ? '60%' : (isChatListVisible || isUserListVisible) ? '80%' : '100%' }}>
-              {activeRoom ? <ChatBox ID={activeRoom.ID} status={activeRoom.activeStatus} userName={activeRoom.userName} linkedUserID={activeRoom.linkedUserId} userID={state.userID} /> : <Welcome />}
+              {(activeRoom && !!activeRoom.secondRoomID) ? <ChatBox socket={socket} sendMessageToSocket={sendMessageToSocket} ID={activeRoom.ID} secondRoomID={activeRoom.secondRoomID} status={!!activeUsers.some((active) => active.userID === activeRoom.linkedUserID)} userName={activeRoom.userName} linkedUserID={activeRoom.linkedUserID} userID={state.userID} /> : <Welcome />}
               <LogoutButton onClick={handleLogout}>
                 <Typography color="white">Logout</Typography>
               </LogoutButton>
@@ -283,29 +288,29 @@ const ChatPage = () => {
             {isUserListVisible && (
               <RightColumn className="shadow" position="relative">
                   {allUsers.map(user => {
-                      return (
-                        <RoomCard key={user.ID}>
+                    return (
+                      <RoomCard key={user.ID}>
                           <UserList
-                            disabled={!!myRooms.some(room => room.linkedUserId === user.ID) || roomsRequests.ReceiveRequests.some(room => room.userId === user.ID) || roomsRequests.SentRequests.some(room => room.userId === user.ID)}
                             ID={user.ID}
                             userName={user.name}
                             handleOnClick={handleOnUserClick}
-                          /> 
+                            /> 
                         </RoomCard>
                       );
                     })}
               </RightColumn>
             )}
         </RowContainer>
-      )}
-      <CurrentUser onMouseEnter={() => setIsUserDetailsModalVisible(true)}>
+      <CurrentUser style={isChatListVisible ? {width: 295} : {width: 50}} onMouseEnter={() => setIsUserDetailsModalVisible(true)}>
           <Face />
       </CurrentUser>
-      <PendingRequests onMouseEnter={() => setIsPendingRequestModalVisible(true)}>
+      <PendingRequests style={isUserListVisible ? {width: 275} : {width: 50}} onMouseEnter={() => setIsPendingRequestModalVisible(true)}>
           <PendingActions />
       </PendingRequests>
       {state.username && <UserDetailsModal user={{ email: state.username, name: state.username }} visible={isUserDetailsModalVisible} handleClose={() => setIsUserDetailsModalVisible(false)} />}
       <RequestsModalContainer handleOnClick={handleAcceptRoomRequest} rooms={roomsRequests} visible={isPendingRequestModalVisible} handleClose={() => setIsPendingRequestModalVisible(false)} />
+      </>
+      )}
     </RootContainer>
   );
 };

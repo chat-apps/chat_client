@@ -5,10 +5,9 @@ import Avatar from '../Avatar';
 interface UserListInterface {
   ID: number;
   userName: string;
-  disabled: boolean;
   handleOnClick: (args: number) => void;
 }
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(() => ({
   container: {
     marginBottom: 8,
   },
@@ -28,7 +27,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const UserList = ({ ID, userName, disabled, handleOnClick }: UserListInterface) => {
+const UserList = ({ ID, userName, handleOnClick }: UserListInterface) => {
   const classes = useStyles();
 
   const handleClick = () => {
@@ -36,7 +35,7 @@ const UserList = ({ ID, userName, disabled, handleOnClick }: UserListInterface) 
   };
 
   return (
-    <ListItem button disabled={disabled} onClick={handleClick} className={classes.container}>
+    <ListItem button onClick={handleClick} className={classes.container}>
       <Box className={classes.box}>
         <Avatar name={userName} />
         <Typography variant="body1" className={classes.username}>

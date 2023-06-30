@@ -1,21 +1,20 @@
 import { useEffect, useState } from 'react';
-import io, { Socket } from 'socket.io-client';
-import { OnlineUsersResponse } from './types';
+import { ActiveUsersSocketResponse } from './types';
+import { SendMessageToSocketInterface } from '../components/types';
+import socket from './socket';
 
-const useSocket = (socketUrl: string, userID: number) => {
-  const [socket, setSocket] = useState<Socket<any>>();
-  const [activeUsers, setActiveUsers] = useState<OnlineUsersResponse[]>([]);
+const useSocket = (userID: number) => {
+  const [activeUsers, setActiveUsers] = useState<ActiveUsersSocketResponse[]>([]);
 
   useEffect(() => {
-    const newSocket = io(socketUrl);
-    newSocket.on('activeUsers', (users) => {
+    socket.on('active-users', (users) => {
       setActiveUsers(users);
     });
 
-    setSocket(newSocket);
-    newSocket.emit('join', userID);
 
-  }, [socketUrl, userID]);
+    socket.emit('join', userID);
+
+  }, [userID]);
 
   const disconnect = (id: number) => {
     if (socket) {
@@ -23,8 +22,15 @@ const useSocket = (socketUrl: string, userID: number) => {
     }
   }
 
+  const sendMessageToSocket = (message: SendMessageToSocketInterface) => {
+    if (socket) socket.emit('send-message', message)
+  }
 
-  return { socket, activeUsers, disconnect };
-};
+  const sendDeleteMessageToSocket = (data: { messageId: number, linkedUserID: number }) => {
+    if (socket) socket.emit('delete-message', data)
+  }
+
+  return { socket, activeUsers, disconnect, sendMessageToSocket, sendDeleteMessageToSocket };
+}
 
 export default useSocket;

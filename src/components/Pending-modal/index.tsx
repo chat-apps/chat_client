@@ -1,14 +1,14 @@
-import { Box, Card, Grid, IconButton, Modal, Typography, styled } from '@mui/material';
-import { makeStyles } from '@mui/styles';
+import { Box, Card, Container, Grid, IconButton, Modal, Typography, styled } from '@mui/material';
+import { CSSProperties, makeStyles } from '@mui/styles';
 import Avatar from '../Avatar';
 import { RequestedRoomsInterface, RequestsInterface } from '../../pages/types';
 import AddIcon from '@mui/icons-material/Add';
+import React from 'react'
 
 export interface PendingRequestModalInterface {
   rooms: RequestsInterface[];
-  visible: boolean;
-  handleClose: () => void;
   handleOnClick?: (args: number) => void;
+  title: string
 }
 
 export interface RequestsModalContainerInterface {
@@ -19,11 +19,9 @@ export interface RequestsModalContainerInterface {
 }
 
 const StyledCard = styled(Card)(() => ({
-  maxWidth: 300,
+  width: 300,
   height: 300,
   paddingBottom: 20,
-  margin: 'auto',
-  marginTop: '25vh',
   backgroundColor: '#111111b5',
   borderRadius: 2,
   position: 'relative',
@@ -47,6 +45,13 @@ const StyledTitle = styled(Typography)(() => ({
   zIndex: 1,
 }));
 
+const ModalsContainer = styled(Box)(() => ({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  width: '60%',
+}));
+
 const useStyles = makeStyles({
   box: {
     display: 'flex',
@@ -61,27 +66,17 @@ const useStyles = makeStyles({
       transform: 'rotate(180deg)',
       transition: 'transform .5s ease-in-out',
     },
-  },
-  modal: {
-    width: 'calc(50% - 10px)', // Adjust the width as per your requirement
-    margin: '10px',
-  },
-  flexContainer: {
-    display: 'flex',
-  },
+  }
 });
 
-const ModalView = ({ handleClose, visible, rooms, handleOnClick }: PendingRequestModalInterface) => {
+const ModalView = ({ rooms, title, handleOnClick }: PendingRequestModalInterface) => {
   const classes = useStyles();
 
-  console.log(rooms, "lllll");
-  
-
   return (
-    <Modal open={visible} onClose={handleClose}>
       <StyledCard>
-        <StyledTitle>Pending Requests</StyledTitle>
-        {rooms.length && rooms.map((room) => (
+        <StyledTitle>{title}</StyledTitle>
+      {rooms.length ?
+        rooms.length && rooms.map((room) => (
           <Box className={classes.box} key={room.ID}>
             <Box style={{ display: 'flex', alignItems: 'center' }}>
               <Avatar name={room.userName} />
@@ -95,20 +90,20 @@ const ModalView = ({ handleClose, visible, rooms, handleOnClick }: PendingReques
               </IconButton>
             ) : null}
           </Box>
-        ))}
+        )) : <Typography color='#9f9f9f63' align='center' marginTop='30px' fontSize='120px' fontWeight={500} textTransform='uppercase'>?</Typography>}
       </StyledCard>
-    </Modal>
   );
 };
 
 const RequestsModalContainer = ({ handleClose, handleOnClick, rooms, visible }: RequestsModalContainerInterface) => {
-  const classes = useStyles();
 
   return (
-    <div className={classes.flexContainer}>
-      <ModalView visible={visible} handleClose={handleClose} rooms={rooms.SentRequests} />
-      <ModalView visible={visible} handleClose={handleClose} handleOnClick={handleOnClick} rooms={rooms.ReceiveRequests} />
-    </div>
+    <Modal sx={{display: 'flex', justifyContent: 'center', alignItems: 'center'}} open={visible} onClose={handleClose}>
+      <ModalsContainer>
+        <ModalView title="Sent Requests" rooms={rooms.SentRequests} />
+        <ModalView title="Pending Requests" handleOnClick={handleOnClick} rooms={rooms.ReceiveRequests} />
+      </ModalsContainer>
+    </Modal>
   );
 };
 

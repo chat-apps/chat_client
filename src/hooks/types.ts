@@ -1,4 +1,4 @@
-export interface OnlineUsersResponse {
-    userId: number;
-    socketId: string;
+export interface ActiveUsersSocketResponse {
+    userID: number;
+    socketID: string;
 }

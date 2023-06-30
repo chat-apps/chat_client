@@ -10,11 +10,12 @@ export interface LoginUserInterface {
   password: string;
 }
 export interface CreateRoomInterface {
-  linkedUser: number;
+  linkedUserID: number;
 }
 export interface SendMessageInterface {
   roomID: number;
   text: string
+  secondRoomID: number;
 }
 
 export interface GetRoomsRequestApiRes {

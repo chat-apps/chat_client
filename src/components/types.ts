@@ -11,11 +11,16 @@ export interface LoaderPropsInterface {
 }
 
 
-export interface MessagesState {
-  myMessages: string[];
-  receiverMessages: string[];
+export interface MessageStateInterface {
+  userID: number;
+  text: string;
+  createdAt: string;
+  ID: number;
 }
-export interface MessageApiResponse {
+
+export interface SendMessageToSocketInterface {
+  userID: number,
   text: string,
-  userID: number
+  roomID: number,
+  linkedUserID: number
 }

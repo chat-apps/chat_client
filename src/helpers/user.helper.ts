@@ -41,5 +41,20 @@ const getAllUsers = async (token: string) => {
   })
 }
 
+const getUserRooms = async (token: string) => {
+  return axios.get(
+    `${BASE_URL}/user/get-user-rooms`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'authorization': 'Bearer ' + token
+    }
+  }
+  ).then((res) => {
+    return res.data
+  }).catch((error) => {
+    return error.response.data.error
+  })
+}
 
-export { signUpApi, loginApi, getAllUsers }
+
+export { signUpApi, loginApi, getAllUsers, getUserRooms }

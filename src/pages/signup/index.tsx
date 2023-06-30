@@ -7,7 +7,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { Link, useNavigate } from 'react-router-dom';
-import { signUpApi } from '../../helpers/login.helper';
+import { signUpApi } from '../../helpers/user.helper';
 import { setItemToLocalStorage } from '../../utils';
 import { useUserContext } from '../../context/user.context';
 import { errorToast, successToast } from '../../utils/toast';

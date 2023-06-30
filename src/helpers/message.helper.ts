@@ -12,14 +12,12 @@ const sendMessage = async (body: SendMessageInterface, token: string) => {
     }
     ).then((res) => {
         return res.data
-    }).catch((error) => {
-        return error.response.data.error
     })
 }
 
-const getRoomMessages = async (roomId: number, token: string) => {
+const getRoomMessages = async (roomId: number, secondRoomID: number, token: string) => {
     return axios.get(
-        `${BASE_URL}/message/getRoomMessages/${roomId}`, {
+        `${BASE_URL}/message/getRoomMessages/${roomId}/${secondRoomID}`, {
         headers: {
             'Content-Type': 'application/json',
             'authorization': 'Bearer ' + token
@@ -27,10 +25,21 @@ const getRoomMessages = async (roomId: number, token: string) => {
     }
     ).then((res) => {
         return res.data
-    }).catch((error) => {
-        return error.response.data.error
+    })
+}
+
+const deleteMessageApi = async (messageId: number, token: string) => {
+    return axios.delete(
+        `${BASE_URL}/message/delete-message/${messageId}`, {
+        headers: {
+            'Content-Type': 'application/json',
+            'authorization': 'Bearer ' + token
+        }
+    }
+    ).then((res) => {
+        return res.data
     })
 }
 
 
-export { sendMessage, getRoomMessages }
+export { sendMessage, getRoomMessages, deleteMessageApi }

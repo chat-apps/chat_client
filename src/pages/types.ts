@@ -1,15 +1,16 @@
-export interface SocketsObject {
-    userId: number,
-    socketId: number
-}
-
 export interface MyRoomsStateInterface {
     ID: number;
     userName: string;
-    activeStatus: boolean;
-    status: boolean;
-    linkedUserId: number;
+    linkedUserID: number;
     lastMessage?: string;
+}
+
+export interface ActiveRoomInterface {
+    ID: number;
+    userName: string;
+    status: boolean;
+    secondRoomID: number;
+    linkedUserID: number;
 }
 
 export interface RequestedRoomsInterface {

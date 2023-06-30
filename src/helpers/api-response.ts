@@ -5,6 +5,7 @@ export interface GetRoomApiRes {
     userID: number;
     status: boolean;
     linkedUserId: number;
+    secondRoomID: number;
     linkedUser: LinkedUser;
     user: LinkedUser;
     messages: any[];
